@@ -17,6 +17,7 @@ const PING_INTERVAL_MS = 5000;
 export function useChatWebSocket() {
   const clientRef = useRef(null);
   const roomSubRef = useRef(null);
+  const typingSubRef = useRef(null);
   const presenceSubRef = useRef(null);
   const pongSubRef = useRef(null);
   const pingTimerRef = useRef(null);
@@ -68,24 +69,24 @@ export function useChatWebSocket() {
         roomSubRef.current.unsubscribe();
         roomSubRef.current = null;
       }
+      if (typingSubRef.current) {
+        typingSubRef.current.unsubscribe();
+        typingSubRef.current = null;
+      }
       if (!roomId) return;
 
-      roomSubRef.current = client.subscribe(`/topic/room.${roomId}`, (frame) => {
+      roomSubRef.current = client.subscribe(`/topic/room.${roomId}.messages`, (frame) => {
         const body = JSON.parse(frame.body);
-
-        if (body.type === "TYPING") {
-          setTyping(roomId, body.senderUsername, true);
-          setTimeout(() => setTyping(roomId, body.senderUsername, false), 3000);
-          return;
-        }
-
         appendMessage(roomId, body);
         incrementUnread(roomId);
       });
+
+      typingSubRef.current = client.subscribe(`/topic/room.${roomId}.typing`, (frame) => {
+        const body = JSON.parse(frame.body);
+        setTyping(roomId, body.senderUsername, true);
+        setTimeout(() => setTyping(roomId, body.senderUsername, false), 3000);
+      });
     },
-    // Exhaustive: these three Zustand actions are the only external values
-    // this closure reads. roomId/client are parameters, not captured state,
-    // so they don't belong here.
     [appendMessage, incrementUnread, setTyping]
   );
 
@@ -199,6 +200,7 @@ export function useChatWebSocket() {
       clearTimeout(reconnectTimerRef.current);
       clearInterval(pingTimerRef.current);
       roomSubRef.current?.unsubscribe();
+      typingSubRef.current?.unsubscribe();
       presenceSubRef.current?.unsubscribe();
       pongSubRef.current?.unsubscribe();
       client.deactivate();

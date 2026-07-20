@@ -31,4 +31,15 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    public String generateToken(String userId, String username) {
+        long now = System.currentTimeMillis();
+        return Jwts.builder()
+                .subject(userId)
+                .claim("username", username)
+                .issuedAt(new java.util.Date(now))
+                .expiration(new java.util.Date(now + 86400000))
+                .signWith(signingKey)
+                .compact();
+    }
 }

@@ -9,7 +9,9 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/chatapp}
     username: ${SPRING_DATASOURCE_USERNAME:chatapp}
     password: ${SPRING_DATASOURCE_PASSWORD:chatapp_secret}
+    driver-class-name: org.postgresql.Driver
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     properties:
